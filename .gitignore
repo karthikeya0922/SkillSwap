@@ -1,0 +1,22 @@
+# Secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+backend/.env
+
+# Build output
+backend/target/
+frontend/node_modules/
+frontend/dist/
+
+# Runtime data
+backend/uploads/
+uploads/
+*.log
+
+# Editors / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
