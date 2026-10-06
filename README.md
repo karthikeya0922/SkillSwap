@@ -1,136 +1,140 @@
-# SkillSwap 🎓⚡
-> **Peer-to-Peer Campus Skill Exchange Platform**  
-> Teach what you know. Learn what you need. Zero fiat currency — powered by a transparent 1:1 Time-Credit protocol.
+# SkillSwap
 
----
+**Learn. Teach. Exchange. Grow.**
 
-## 🌟 Overview
-
-**SkillSwap** is a full-stack campus collaboration platform engineered to democratize peer learning among university students. Instead of paying monetary tutoring fees, students trade time:
-- **1 Hour Teaching = 1 Time Credit (TC) Earned**
-- **1 Hour Learning = 1 Time Credit (TC) Spent**
-- Every registered student receives **5.0 Free Time Credits** as a signup bonus to kickstart their learning journey.
-
-The platform is backed by a production-ready **Spring Boot 4** backend (Java 21) with an immutable time-credit ledger, deterministic peer matching algorithm, WebSocket-based real-time chat, and a responsive **React 19** frontend powered by Vite and Tailwind CSS.
-
----
-
-## 🚀 Key Features
-
-### 1. ⏱️ Time-Credit Wallet & Escrow Ledger
-- **Immutable Transaction History**: Complete audit trail for credits earned, credits spent, review bonuses, and admin grants.
-- **Session Escrow**: When a student requests a session, the credit is locked in escrow and released automatically only after mutual completion confirmation.
-
-### 2. 🧠 Deterministic Peer Matching Engine
-- Multi-factor scoring model that matches students based on:
-  - **Skill Reciprocity**: Matching teachers with learners who offer skills the teacher wants.
-  - **Proficiency Compatibility**: Beginner / Intermediate / Advanced alignments.
-  - **Schedule & Availability Overlap**: Direct alignment of free slots.
-
-### 3. 💬 Real-Time Chat & Live Presence (STOMP / WebSocket)
-- Instant messaging between matched peers using Spring WebSocket and STOMP messaging.
-- Presence tracking indicating when peers are active or in sessions.
-
-### 4. 🏆 Campus Gamification & Community
-- **XP Progression & Ranks**: Earn XP for mentoring peers, completing sessions, and receiving 5-star ratings.
-- **Skill Badges & Achievements**: Recognitions like *Campus Mentor*, *Speedy Learner*, and *Subject Specialist*.
-- **Learning Groups & Challenges**: Campus-wide hackathon prep or study circles.
-
-### 5. 🛡️ Security & Administration
-- **JWT Authentication**: Stateless, tamper-proof session tokens with role-based access control (`STUDENT`, `MODERATOR`, `ADMIN`).
-- **Admin & Moderation Console**: User management, session audit logs, transaction tracking, and dispute resolution.
-- **Realistic Campus Data Seeder**: Instant bootstrapping with 14 categories, 51 skills, and 25 demo students.
-
----
-
-## 🏗️ Architecture & Tech Stack
+SkillSwap is a peer-to-peer skill exchange platform for college students. Students list what they can teach and what they want to learn, get matched with classmates (ideally two-way swaps), chat in real time, book sessions, and pay with **time credits** — one completed teaching hour earns one credit.
 
 ```
-SkillSwap/
-├── backend/                   # Spring Boot 4 REST API & WebSocket Server
-│   ├── src/main/java/com/skillswap/
-│   │   ├── admin/             # Analytics, reports & moderation
-│   │   ├── auth/              # JWT auth controllers & services
-│   │   ├── common/            # Unified ApiResponse envelope & error handling
-│   │   ├── community/         # Groups, challenges, XP & badges
-│   │   ├── connection/        # Student peer connections & requests
-│   │   ├── match/             # Deterministic match calculator & queries
-│   │   ├── realtime/          # STOMP broker, presence & chat
-│   │   ├── session/           # Session scheduling, lifecycle & escrow
-│   │   ├── skill/             # Skill catalogue, proficiency & user skills
-│   │   ├── user/              # User profiles, cards & avatars
-│   │   └── wallet/            # Time wallet ledger & credit transactions
-│   └── pom.xml                # Maven build configuration
-│
-└── frontend/                  # Vite + React 19 Client
-    ├── src/
-    │   ├── App.jsx            # Interactive SkillSwap campus portal
-    │   ├── index.css          # Tailwind CSS styling & glassmorphic tokens
-    │   └── main.jsx           # Application entry point
-    ├── vite.config.js         # Vite configuration with Tailwind plugin
-    └── package.json           # Dependencies (React 19, Lucide, StompJS, Recharts)
+Register → Build profile → Add skills → Discover matches → Connect → Chat
+        → Book session → Credits held → Session completed → Rate → Reputation
 ```
 
-| Layer | Technologies |
+## Features
+
+| Area | What it does |
 |---|---|
-| **Backend** | Spring Boot 4.1.1, Java 21, Spring Security, Spring Data JPA, Hibernate, WebSocket / STOMP |
-| **Database** | MySQL (Production/Dev), In-Memory H2 (Hermetic Unit & Integration Tests) |
-| **Frontend** | React 19, Vite, Tailwind CSS v4, Lucide React, Axios, Recharts, StompJS |
-| **Authentication** | JWT (JSON Web Tokens), BCrypt Password Hashing, Role-Based Access Control |
+| Auth | Registration, login, JWT (BCrypt-hashed passwords), role-based access (`STUDENT`, `ADMIN`), login throttling, persistent sessions |
+| Profiles | Photo upload, bio, college/department/year, weekly availability, teach/learn skills with proficiency and experience, stats, badges, reviews |
+| Skill catalogue | 14 categories, 50+ skills, admin-managed (unused skills are deleted, used ones deactivated) |
+| Matching | Deterministic 0–100 score with plain-English reasons ("You want to learn UI/UX and Rahul teaches UI/UX…") |
+| Discover | Search plus filters for skill, category, proficiency, rating, department and availability; sort by match, rating, sessions, newest |
+| Connections | Request, accept, decline, cancel, remove. Only connected students can chat |
+| Learning requests | "I want to learn X" posts; teachers of X offer help; the learner accepts one and books a session |
+| Sessions | Booking with overlap, self-booking, past-time and length checks; accept/decline/cancel/complete lifecycle; reminders; auto-expiry and auto-completion |
+| Time wallet | Ledger-backed balance, credits held when a session is accepted, released on completion, refunded on cancellation; overspending prevented |
+| Ratings | 1–5 stars plus teaching quality, communication and knowledge; one review per session; averages recomputed from the table |
+| Real-time | STOMP over WebSocket: messages, typing indicator, read receipts, online presence, live notifications |
+| Community | Learning groups (public/private, invitations, discussion, group sessions and events) and skill challenges (submissions, peer reviews) |
+| Reputation | XP for teaching, learning, good ratings, helping and challenges; ranks from Beginner to Community Master; 9 badges |
+| Admin | Analytics dashboard (Recharts), user search/suspend/reactivate, skill and category management, report review with warn / remove content / suspend actions |
 
----
+## Tech stack
 
-## ⚡ Quickstart & Setup
+- **Frontend:** React 19, Vite, Tailwind CSS 4, React Router, Axios, React Hook Form, Recharts, Lucide icons, `@stomp/stompjs`
+- **Backend:** Java 21, Spring Boot 4.1 (Web MVC, Security, Data JPA/Hibernate, Validation, WebSocket), JJWT, Maven wrapper
+- **Database:** MySQL 8 (H2 in MySQL mode for tests only)
+- **Ops:** Dockerfiles and Docker Compose
 
-### Prerequisites
-- **Java 21** or later
-- **Node.js 18+** and **npm**
-- **Git**
+## Running locally
 
-### 1. Backend Setup
+**Prerequisites:** JDK 21+, Node 20+, and MySQL 8 running locally. Maven is not required because the project includes the Maven wrapper.
+
+### 1. Backend
+
 ```bash
 cd backend
-
-# Run the full test suite (20 unit and integration tests against H2)
-./mvnw test
-
-# Start the Spring Boot backend server on port 8080
-./mvnw spring-boot:run
+cp .env.example .env        # then edit DB_PASSWORD and JWT_SECRET
+./mvnw spring-boot:run      # Windows: mvnw.cmd spring-boot:run
 ```
 
-*By default, the backend seeds demo accounts on startup. You can log in as `admin@skillswap.dev` or any demo student profile.*
+`backend/.env` is git-ignored and is loaded automatically. Settings you can put in it:
 
-### 2. Frontend Setup
-```bash
-cd ../frontend
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-
-# Build production bundle
-npm run build
-```
-
----
-
-## 📡 API Endpoints Summary
-
-| Method | Endpoint | Description |
+| Variable | Purpose | Default |
 |---|---|---|
-| `POST` | `/api/auth/register` | Register new student profile (+5 TC bonus) |
-| `POST` | `/api/auth/login` | Authenticate and obtain JWT token |
-| `GET` | `/api/skills` | List searchable skill catalogue |
-| `GET` | `/api/matches` | Get deterministic peer matches for current student |
-| `POST` | `/api/connections` | Send connection swap request |
-| `POST` | `/api/sessions/book` | Book 1-hour session (locks 1 TC into escrow) |
-| `POST` | `/api/sessions/{id}/complete` | Confirm session completion & release credits |
-| `GET` | `/api/wallet` | Fetch current wallet balance & transaction ledger |
-| `GET` | `/api/admin/metrics` | Campus metrics & moderation overview (Admin only) |
+| `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | MySQL connection (the database is created if missing) | `localhost:3306/skillswap`, `skillswap`, — |
+| `JWT_SECRET` | HMAC signing key, at least 32 characters (**required**) | — |
+| `SERVER_PORT` | API port | `8080` |
+| `CORS_ALLOWED_ORIGINS` | Allowed browser origins | `http://localhost:5173` |
+| `SEED_ENABLED` | Seed demo data into an empty database | `true` |
+| `SEED_DEMO_PASSWORD` | Password for all demo students (no students are seeded if this is blank) | — |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Admin account (no admin is seeded if the password is blank) | `admin@skillswap.dev` |
 
----
+### 2. Frontend
 
-## 📄 License
-This project is licensed under the MIT License.
+```bash
+cd frontend
+npm install
+npm run dev                 # http://localhost:5173
+```
+
+Vite proxies `/api`, `/ws` and `/uploads` to the backend. If the backend is not on port 8080, create `frontend/.env.local` containing `VITE_BACKEND_URL=http://localhost:<port>`.
+
+### Demo accounts
+
+With seeding enabled, every demo student signs in as `<firstname>@skillswap.dev` using `SEED_DEMO_PASSWORD`. Good accounts to start with:
+
+- `karthikeya@skillswap.dev`: the most complete profile, with sessions, matches, chats, a pending group invite and incoming requests
+- `rahul@skillswap.dev`: a two-way match with Karthikeya (UI/UX ↔ Java)
+- `admin@skillswap.dev` (with `ADMIN_PASSWORD`): the analytics and moderation console. One reported spam account is waiting for review.
+
+## Docker
+
+```bash
+cp .env.example .env        # fill in secrets
+docker compose up --build   # open http://localhost:3000
+```
+
+This starts MySQL 8.4, the API and an nginx container that serves the built frontend and proxies the API and WebSocket traffic.
+
+## Tests
+
+```bash
+cd backend && ./mvnw test
+```
+
+There are 20 tests:
+
+- unit tests for the match algorithm
+- HTTP tests for auth and security (validation, duplicate email, 401 and 403 responses)
+- session and credit-ledger integration tests (overlap, past bookings, self-booking, insufficient credits, escrow, refunds, duplicate ratings)
+- a full seed run that checks every wallet's ledger sums to its balance
+
+## Architecture
+
+```
+backend/src/main/java/com/skillswap
+├── auth, user, skill, match, connection, request, session,
+│   wallet, rating, chat, notification, group, challenge,
+│   reputation, report, admin, dashboard      ← one package per feature
+│       Controller → Service → Repository → MySQL, with DTOs and mappers
+├── security    JWT filter, token authenticator, JSON 401/403 handlers
+├── common      Error envelope, global exception handler, paging, file storage
+└── config      Security, WebSocket (STOMP), CORS, seed data
+```
+
+- **Responses.** Successes use `{ success, status, message?, data, timestamp }`. Errors use `{ success: false, status, message, errors?, path, timestamp }`.
+- **Credits.** Only `WalletService` changes a balance. Every change writes a ledger row in the same transaction, and debits take a row lock.
+- **Authorization.** User IDs always come from the JWT principal and never from request bodies. Each service checks ownership or participation, and admin routes are restricted at the filter chain.
+- **Real-time.** The STOMP `CONNECT` frame carries the JWT, and clients may only subscribe to their own `/user/queue/*` destinations. Pushes are sent after the database transaction commits.
+
+### Match score (0–100)
+
+| Signal | Points |
+|---|---|
+| They teach a skill you want (40 for the first, +5 for each extra, −3 for each skill where their level is below your target) | up to 50 |
+| They want a skill you teach (a two-way swap) | 25–30 |
+| Shared interest categories | up to 8 |
+| Overlapping weekly availability | up to 7 |
+| Their teacher rating (2.5 if unrated) | up to 5 |
+
+Scores of 80 and above are labelled 🔥 **Great SkillSwap Match**.
+
+### Session lifecycle
+
+`REQUESTED → ACCEPTED` (credits held; logistics pending) `→ SCHEDULED` (link or location set) `→ ONGOING → COMPLETED` (credits released to the teacher). `REJECTED` and `CANCELLED` (held credits refunded) are terminal. Unanswered requests expire at their start time. Sessions the learner never confirms complete automatically 48 hours after they end.
+
+## Production notes
+
+- Set `SEED_ENABLED=false` and use a strong `JWT_SECRET`.
+- The schema uses `ddl-auto=update` for convenience. Switch to a migration tool before running with real data at scale.
+- Presence tracking and login throttling are in-memory, so they assume a single backend instance.
