@@ -4,10 +4,10 @@
 
 SkillSwap is a peer-to-peer skill exchange platform for college students. Students list what they can teach and what they want to learn, get matched with classmates (ideally two-way swaps), chat in real time, book sessions, and pay with **time credits** — one completed teaching hour earns one credit.
 
-```
+````
 Register → Build profile → Add skills → Discover matches → Connect → Chat
         → Book session → Credits held → Session completed → Rate → Reputation
-```
+````
 
 ## Features
 
