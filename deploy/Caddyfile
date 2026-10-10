@@ -1,0 +1,5 @@
+# Caddy obtains and renews a Let's Encrypt certificate for SITE_ADDRESS automatically.
+{$SITE_ADDRESS} {
+	encode gzip
+	reverse_proxy frontend:80
+}

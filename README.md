@@ -86,6 +86,17 @@ docker compose up --build   # open http://localhost:3000
 
 This starts MySQL 8.4, the API and an nginx container that serves the built frontend and proxies the API and WebSocket traffic.
 
+## Deploying (free, always on)
+
+The whole stack runs on one [Oracle Cloud Always Free](https://www.oracle.com/cloud/free/) VM (Ampere A1, Ubuntu). In the VM's subnet security list, allow inbound TCP 80 and 443. Then SSH in and run:
+
+```bash
+git clone https://github.com/karthikeya0922/SkillSwap.git && cd SkillSwap
+bash deploy/setup.sh
+```
+
+The script installs Docker, opens the firewall, generates `.env` with random secrets and starts everything behind Caddy. Caddy serves HTTPS on `https://<ip-with-dashes>.sslip.io`. It prints the URL and the demo and admin passwords when it finishes. To update the server later, run `git pull && bash deploy/setup.sh`.
+
 ## Tests
 
 ```bash
