@@ -82,7 +82,7 @@ public class User extends BaseEntity {
 	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(name = "user_availability", joinColumns = @JoinColumn(name = "user_id"))
 	@Enumerated(EnumType.STRING)
-	@Column(name = "slot", length = 30)
+	@Column(name = "slot", length = 30, nullable = false)
 	private Set<Availability> availability = EnumSet.noneOf(Availability.class);
 
 	public boolean isActive() {

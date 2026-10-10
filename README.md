@@ -86,6 +86,15 @@ docker compose up --build   # open http://localhost:3000
 
 This starts MySQL 8.4, the API and an nginx container that serves the built frontend and proxies the API and WebSocket traffic.
 
+## Deploying for free without a card (Render + Aiven)
+
+1. **Database:** create a free MySQL service at [aiven.io](https://aiven.io). Note the host, port, user and password from its overview page.
+2. **App:** on [render.com](https://render.com) choose **New → Blueprint**, pick this repo and fill in the prompted values:
+   `DB_URL=jdbc:mysql://<host>:<port>/defaultdb?sslMode=REQUIRED&serverTimezone=Asia/Kolkata`, `DB_USERNAME`, `DB_PASSWORD`, `SEED_DEMO_PASSWORD` and `ADMIN_PASSWORD`.
+3. **Stay awake:** free Render services sleep after 15 idle minutes. Add a free monitor on [cron-job.org](https://cron-job.org) or [UptimeRobot](https://uptimerobot.com) that requests `https://skillswap-api-karthikeya.onrender.com/api/categories` every 10 minutes.
+
+On Render's free plan, uploaded profile photos are lost whenever the API restarts or redeploys.
+
 ## Deploying (free, always on)
 
 The whole stack runs on one [Oracle Cloud Always Free](https://www.oracle.com/cloud/free/) VM (Ampere A1, Ubuntu). In the VM's subnet security list, allow inbound TCP 80 and 443. Then SSH in and run:
