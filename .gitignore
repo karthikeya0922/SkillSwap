@@ -13,6 +13,7 @@ frontend/dist/
 backend/uploads/
 uploads/
 *.log
+logs/
 
 # Editors / OS
 .idea/

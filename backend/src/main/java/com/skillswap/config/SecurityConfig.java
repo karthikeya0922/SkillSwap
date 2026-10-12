@@ -51,6 +51,9 @@ public class SecurityConfig {
 						.requestMatchers("/ws/**", "/uploads/**", "/error").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/skills/**").permitAll()
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
+						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+						.requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
+						.requestMatchers("/actuator/**").hasRole("ADMIN")
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 		return http.build();
