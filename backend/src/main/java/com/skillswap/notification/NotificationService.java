@@ -3,7 +3,6 @@ package com.skillswap.notification;
 import java.time.LocalDateTime;
 
 import org.springframework.data.domain.Page;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,17 +28,17 @@ public class NotificationService {
 
 	private final NotificationRepository notificationRepository;
 	private final UserRepository userRepository;
-	private final SimpMessagingTemplate messaging;
+	private final NotificationPusher pusher;
 
 	public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository,
-			SimpMessagingTemplate messaging) {
+			NotificationPusher pusher) {
 		this.notificationRepository = notificationRepository;
 		this.userRepository = userRepository;
-		this.messaging = messaging;
+		this.pusher = pusher;
 	}
 
 	/**
-	 * Stores a notification and pushes it over WebSocket once the caller's transaction commits. Joins the caller's
+	 * Stores a notification and pushes it over WebSocket (asynchronously) once the caller's transaction commits. Joins the caller's
 	 * transaction so a rolled-back action never leaves a stray notification behind.
 	 */
 	@Transactional
@@ -61,7 +60,7 @@ public class NotificationService {
 		notificationRepository.save(notification);
 		NotificationDto dto = toDto(notification);
 		String destinationUser = recipient.getEmail();
-		AfterCommit.run(() -> messaging.convertAndSendToUser(destinationUser, USER_QUEUE, dto));
+		AfterCommit.run(() -> pusher.push(destinationUser, dto));
 	}
 
 	@Transactional(readOnly = true)

@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,7 @@ import com.skillswap.common.api.PageResponse;
 import com.skillswap.common.exception.BadRequestException;
 import com.skillswap.common.exception.ConflictException;
 import com.skillswap.common.exception.ResourceNotFoundException;
+import com.skillswap.config.CacheConfig;
 import com.skillswap.skill.dto.SkillDtos.SkillDto;
 import com.skillswap.skill.dto.SkillDtos.SkillUpsertRequest;
 
@@ -31,6 +34,8 @@ public class SkillService {
 		this.categoryService = categoryService;
 	}
 
+	/** Only the unfiltered catalogue is cached; free-text and category searches would make the cache unbounded. */
+	@Cacheable(cacheNames = CacheConfig.SKILLS, key = "'all'", condition = "(#q == null or #q.isBlank()) and #categoryId == null")
 	@Transactional(readOnly = true)
 	public List<SkillDto> search(String q, Long categoryId) {
 		Map<Long, long[]> counts = counts();
@@ -50,6 +55,7 @@ public class SkillService {
 		return toDto(getEntity(id), counts());
 	}
 
+	@CacheEvict(cacheNames = { CacheConfig.CATEGORIES, CacheConfig.SKILLS }, allEntries = true)
 	@Transactional
 	public SkillDto create(SkillUpsertRequest request) {
 		if (skillRepository.existsByNameIgnoreCase(request.name().trim())) {
@@ -60,6 +66,7 @@ public class SkillService {
 		return SkillMapper.toDto(skillRepository.save(skill), 0, 0);
 	}
 
+	@CacheEvict(cacheNames = { CacheConfig.CATEGORIES, CacheConfig.SKILLS }, allEntries = true)
 	@Transactional
 	public SkillDto update(Long id, SkillUpsertRequest request) {
 		Skill skill = getEntity(id);
@@ -76,6 +83,7 @@ public class SkillService {
 	 *
 	 * @return true when the skill was deleted, false when it was deactivated
 	 */
+	@CacheEvict(cacheNames = { CacheConfig.CATEGORIES, CacheConfig.SKILLS }, allEntries = true)
 	@Transactional
 	public boolean deleteOrDeactivate(Long id) {
 		Skill skill = getEntity(id);

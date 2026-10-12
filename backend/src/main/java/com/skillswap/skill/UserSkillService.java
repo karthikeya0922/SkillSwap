@@ -3,6 +3,7 @@ package com.skillswap.skill;
 import java.util.List;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,6 +11,7 @@ import com.skillswap.common.exception.BadRequestException;
 import com.skillswap.common.exception.ConflictException;
 import com.skillswap.common.exception.ForbiddenException;
 import com.skillswap.common.exception.ResourceNotFoundException;
+import com.skillswap.config.CacheConfig;
 import com.skillswap.skill.dto.SkillDtos.UserSkillDto;
 import com.skillswap.skill.dto.SkillDtos.UserSkillRequest;
 import com.skillswap.skill.dto.SkillDtos.UserSkillUpdateRequest;
@@ -49,6 +51,8 @@ public class UserSkillService {
 				all.stream().filter(s -> s.getType() == SkillType.LEARN).map(SkillMapper::toDto).toList());
 	}
 
+	/** Teacher and learner counts in the cached catalogue change. */
+	@CacheEvict(cacheNames = CacheConfig.SKILLS, allEntries = true)
 	@Transactional
 	public UserSkillDto add(Long userId, UserSkillRequest request) {
 		Skill skill = skillService.requireActive(request.skillId());
@@ -81,6 +85,7 @@ public class UserSkillService {
 		return SkillMapper.toDto(userSkill);
 	}
 
+	@CacheEvict(cacheNames = CacheConfig.SKILLS, allEntries = true)
 	@Transactional
 	public void delete(Long userId, Long id) {
 		userSkillRepository.delete(owned(userId, id));

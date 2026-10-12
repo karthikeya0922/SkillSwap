@@ -1,10 +1,13 @@
 package com.skillswap.user;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 import com.skillswap.common.BaseEntity;
+import com.skillswap.skill.UserSkill;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -15,6 +18,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -84,6 +88,14 @@ public class User extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "slot", length = 30, nullable = false)
 	private Set<Availability> availability = EnumSet.noneOf(Availability.class);
+
+	/**
+	 * Inverse side of {@link UserSkill#getUser()}: the teach and learn skills on this profile. Lazy and mapped by the
+	 * existing {@code user_skills.user_id} column, so it adds nothing to the schema. Writes still go through
+	 * {@code UserSkillService}.
+	 */
+	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+	private List<UserSkill> skills = new ArrayList<>();
 
 	public boolean isActive() {
 		return status == UserStatus.ACTIVE;

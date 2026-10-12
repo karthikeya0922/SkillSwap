@@ -4,10 +4,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.skillswap.common.exception.ConflictException;
+import com.skillswap.config.CacheConfig;
 import com.skillswap.common.exception.ResourceNotFoundException;
 import com.skillswap.skill.dto.SkillDtos.CategoryDto;
 import com.skillswap.skill.dto.SkillDtos.CategoryUpsertRequest;
@@ -23,6 +26,7 @@ public class CategoryService {
 		this.skillRepository = skillRepository;
 	}
 
+	@Cacheable(CacheConfig.CATEGORIES)
 	@Transactional(readOnly = true)
 	public List<CategoryDto> list() {
 		Map<Long, Long> counts = new HashMap<>();
@@ -33,6 +37,7 @@ public class CategoryService {
 				.map(c -> SkillMapper.toDto(c, counts.getOrDefault(c.getId(), 0L))).toList();
 	}
 
+	@CacheEvict(cacheNames = { CacheConfig.CATEGORIES, CacheConfig.SKILLS }, allEntries = true)
 	@Transactional
 	public CategoryDto create(CategoryUpsertRequest request) {
 		if (categoryRepository.existsByNameIgnoreCase(request.name().trim())) {
@@ -43,6 +48,7 @@ public class CategoryService {
 		return SkillMapper.toDto(categoryRepository.save(category), 0);
 	}
 
+	@CacheEvict(cacheNames = { CacheConfig.CATEGORIES, CacheConfig.SKILLS }, allEntries = true)
 	@Transactional
 	public CategoryDto update(Long id, CategoryUpsertRequest request) {
 		Category category = get(id);
@@ -53,6 +59,7 @@ public class CategoryService {
 		return SkillMapper.toDto(category, skillRepository.countByCategoryId(id));
 	}
 
+	@CacheEvict(cacheNames = { CacheConfig.CATEGORIES, CacheConfig.SKILLS }, allEntries = true)
 	@Transactional
 	public void delete(Long id) {
 		Category category = get(id);
