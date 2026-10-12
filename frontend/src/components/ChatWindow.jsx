@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Check, CheckCheck, Flag, Send } from 'lucide-react'
 import Avatar from './ui/Avatar'
+import Markdown from './ui/Markdown'
 import { Spinner } from './ui/Feedback'
 import ReportModal from './ReportModal'
 import { messageService } from '../services'
@@ -210,7 +211,7 @@ export default function ChatWindow({ me, partner, online, onBack, onActivity }) 
                     <div className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm shadow-sm sm:max-w-[65%] ${
                       m.removed ? 'bg-slate-100 text-slate-400 italic' : mine ? 'rounded-br-md bg-brand-600 text-white' : 'rounded-bl-md bg-white text-slate-800'
                     }`}>
-                      <p className="break-words whitespace-pre-wrap">{m.content}</p>
+                      <Markdown text={m.content} />
                       <p className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${mine ? 'text-brand-100' : 'text-slate-400'}`}>
                         {formatTime(m.createdAt)}
                         {mine && (m.readAt ? <CheckCheck size={12} aria-label="Read" /> : <Check size={12} aria-label="Sent" />)}

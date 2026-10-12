@@ -43,10 +43,35 @@ export function setUnauthorizedHandler(handler) {
   onUnauthorized = handler
 }
 
+// Reads are retried automatically when the network blips or the server is briefly unavailable (for example while a
+// free-tier host wakes up). Writes are never retried, so a request can't create something twice.
+const RETRYABLE_METHODS = ['get', 'head', 'options']
+const RETRYABLE_STATUSES = [502, 503, 504]
+const MAX_RETRIES = 2
+const RETRY_BASE_DELAY_MS = 600
+
+function shouldRetry(error) {
+  const config = error.config
+  if (!config || axios.isCancel(error) || config.retry === false) return false
+  if (!RETRYABLE_METHODS.includes((config.method || 'get').toLowerCase())) return false
+  if ((config.__retryCount || 0) >= MAX_RETRIES) return false
+  if (!error.response) return error.code !== 'ECONNABORTED' // network error, but not our own timeout
+  return RETRYABLE_STATUSES.includes(error.response.status)
+}
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 api.interceptors.response.use(
   // Every successful response is wrapped in { success, data, message }; unwrap to the payload.
   (response) => response.data?.data,
-  (error) => {
+  async (error) => {
+    if (shouldRetry(error)) {
+      const config = error.config
+      config.__retryCount = (config.__retryCount || 0) + 1
+      // Exponential backoff with a little jitter: ~600 ms, then ~1.2 s.
+      await wait(RETRY_BASE_DELAY_MS * 2 ** (config.__retryCount - 1) + Math.random() * 200)
+      return api(config)
+    }
     const status = error.response?.status
     const body = error.response?.data
     if (status === 401 && tokenStore.get() && onUnauthorized) onUnauthorized()

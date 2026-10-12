@@ -4,17 +4,21 @@ import Navbar from './Navbar'
 import Sidebar from './Sidebar'
 import { useAuth } from '../context/AuthContext'
 import { FullPageSpinner } from './ui/Feedback'
+import ErrorBoundary from './ErrorBoundary'
 
 /** Shell for every signed-in page: sidebar + top bar + routed content. */
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { pathname } = useLocation()
   return (
     <div className="min-h-screen">
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
       <div className="lg:pl-64">
         <Navbar onMenu={() => setMenuOpen(true)} />
         <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-          <Outlet />
+          <ErrorBoundary resetKey={pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>
