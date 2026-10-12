@@ -27,11 +27,15 @@ Register → Build profile → Add skills → Discover matches → Connect → C
 | Community | Learning groups (public/private, invitations, discussion, group sessions and events) and skill challenges (submissions, peer reviews) |
 | Reputation | XP for teaching, learning, good ratings, helping and challenges; ranks from Beginner to Community Master; 9 badges |
 | Admin | Analytics dashboard (Recharts), user search/suspend/reactivate, skill and category management, report review with warn / remove content / suspend actions |
+| API docs | Swagger UI at `/swagger-ui.html` (OpenAPI 3 at `/v3/api-docs`), with a JWT **Authorize** button |
+| Performance | Cached skill catalogue (`@Cacheable` / `@CacheEvict`), async WebSocket notification delivery (`@Async`), automatic retry of failed reads in the frontend |
+| Monitoring | Spring Boot Actuator health and metrics, per-request timing logs, structured JSON log files |
+| Resilience | React error boundaries with a recovery screen; chat messages support Markdown (bold, italic, code, lists, links) |
 
 ## Tech stack
 
 - **Frontend:** React 19, Vite, Tailwind CSS 4, React Router, Axios, React Hook Form, Recharts, Lucide icons, `@stomp/stompjs`
-- **Backend:** Java 21, Spring Boot 4.1 (Web MVC, Security, Data JPA/Hibernate, Validation, WebSocket), JJWT, Maven wrapper
+- **Backend:** Java 21, Spring Boot 4.1 (Web MVC, Security, Data JPA/Hibernate, Validation, WebSocket, Cache, Actuator), JJWT, springdoc-openapi, Logback, Maven wrapper
 - **Database:** MySQL 8 (H2 in MySQL mode for tests only)
 - **Ops:** Dockerfiles and Docker Compose
 
@@ -112,9 +116,13 @@ The script installs Docker, opens the firewall, generates `.env` with random sec
 cd backend && ./mvnw test
 ```
 
-There are 20 tests:
+There are 42 tests:
 
 - unit tests for the match algorithm
+- Mockito unit tests for `WalletService` and `NotificationService` (repositories and the WebSocket pusher are mocked)
+- cache tests that check reads fill the catalogue caches and every relevant write evicts them
+- JPA relation tests for the `@OneToMany` and `@ManyToMany` mappings
+- endpoint tests for Swagger, Actuator access rules and request IDs
 - HTTP tests for auth and security (validation, duplicate email, 401 and 403 responses)
 - session and credit-ledger integration tests (overlap, past bookings, self-booking, insufficient credits, escrow, refunds, duplicate ratings)
 - a full seed run that checks every wallet's ledger sums to its balance
@@ -136,6 +144,22 @@ backend/src/main/java/com/skillswap
 - **Credits.** Only `WalletService` changes a balance. Every change writes a ledger row in the same transaction, and debits take a row lock.
 - **Authorization.** User IDs always come from the JWT principal and never from request bodies. Each service checks ownership or participation, and admin routes are restricted at the filter chain.
 - **Real-time.** The STOMP `CONNECT` frame carries the JWT, and clients may only subscribe to their own `/user/queue/*` destinations. Pushes are sent after the database transaction commits.
+- **Relations.** Most links are `@ManyToOne` from the owning entity. `User.skills` and `SkillGroup.memberships` are their lazy `@OneToMany` inverse sides. `SkillGroup.activeMembers` is a read-only `@ManyToMany` over the existing `group_members` table. None of them add columns or tables.
+
+## API docs, monitoring and logs
+
+| What | Where | Access |
+|---|---|---|
+| Swagger UI | `http://localhost:8080/swagger-ui.html` | Public. Log in with `POST /api/auth/login`, then paste the token into **Authorize** |
+| OpenAPI JSON | `/v3/api-docs` | Public (set `SWAGGER_ENABLED=false` to turn both off) |
+| Health | `/actuator/health` | Public status; database and disk details for admins |
+| Metrics | `/actuator/metrics`, `/actuator/metrics/{name}` | Admin token only |
+| Caches | `/actuator/caches` | Admin token only |
+
+- **Caching.** The category list and the full skill catalogue are cached in memory. Creating, editing or deleting a category or skill, or adding or removing a profile skill, evicts them once the transaction commits. Filtered searches are not cached, so the cache stays small.
+- **Async.** Notification rows are saved inside the request's transaction, and the WebSocket push runs afterwards on the `skillswap-async-` thread pool.
+- **Logging.** The console uses Spring Boot's normal format, tagged with a request ID. `logs/skillswap.json` (set by `LOG_PATH`) holds one JSON object per line, rolls daily or at 10 MB, and keeps 14 days. Every `/api` call logs its method, path, status and duration, and calls slower than `SLOW_REQUEST_MS` (default 1000) are logged as warnings. Responses carry an `X-Request-Id` header that matches the log lines.
+- **Frontend.** `GET` requests are retried up to twice, with backoff, on network errors and 502/503/504 responses. Writes are never retried automatically.
 
 ### Match score (0–100)
 
