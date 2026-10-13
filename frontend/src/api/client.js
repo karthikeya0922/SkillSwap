@@ -28,12 +28,43 @@ export const tokenStore = {
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
-  timeout: 20000,
+  // Generous on purpose: a sleeping free-tier server can take about a minute to start.
+  timeout: 90000,
 })
+
+// ---- "Server is starting" detection ----
+// When any request has been pending for a few seconds we tell listeners (ServerWakeBanner), so a cold start
+// shows a friendly notice instead of a frozen button.
+const SLOW_AFTER_MS = 4000
+const slowRequests = new Set()
+const wakeListeners = new Set()
+const notifyWake = () => wakeListeners.forEach((listener) => listener(slowRequests.size > 0))
+
+/** Subscribe to "the server is slow to answer" changes. Returns an unsubscribe function. */
+export function onServerWaking(listener) {
+  wakeListeners.add(listener)
+  return () => wakeListeners.delete(listener)
+}
+
+function trackSlow(config) {
+  const id = Symbol('request')
+  config.__slowId = id
+  config.__slowTimer = setTimeout(() => {
+    slowRequests.add(id)
+    notifyWake()
+  }, SLOW_AFTER_MS)
+}
+
+function untrackSlow(config) {
+  if (!config) return
+  clearTimeout(config.__slowTimer)
+  if (slowRequests.delete(config.__slowId)) notifyWake()
+}
 
 api.interceptors.request.use((config) => {
   const token = tokenStore.get()
   if (token) config.headers.Authorization = `Bearer ${token}`
+  trackSlow(config)
   return config
 })
 
@@ -63,8 +94,12 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 api.interceptors.response.use(
   // Every successful response is wrapped in { success, data, message }; unwrap to the payload.
-  (response) => response.data?.data,
+  (response) => {
+    untrackSlow(response.config)
+    return response.data?.data
+  },
   async (error) => {
+    untrackSlow(error.config)
     if (shouldRetry(error)) {
       const config = error.config
       config.__retryCount = (config.__retryCount || 0) + 1
@@ -84,10 +119,18 @@ api.interceptors.response.use(
 
 function friendlyMessage(status, body, error) {
   if (body?.message) return body.message
-  if (error.code === 'ECONNABORTED') return 'The server took too long to respond. Please try again.'
+  if (error.code === 'ECONNABORTED') return 'The server is still starting up. Please wait a few seconds and try again.'
   if (!error.response) return "Can't reach SkillSwap right now. Check your connection and try again."
   if (status >= 500) return 'Something went wrong on our side. Please try again.'
   return 'Something went wrong. Please try again.'
+}
+
+/**
+ * Wakes a sleeping backend as soon as the site opens, so it is usually ready by the time someone has typed their
+ * email and password. Uses a public, cached endpoint and ignores the result.
+ */
+export function wakeServer() {
+  api.get('/categories').catch(() => {})
 }
 
 /** Absolute URL for files served by the backend (avatars). */
